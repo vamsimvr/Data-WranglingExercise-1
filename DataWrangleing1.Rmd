@@ -1,0 +1,136 @@
+---
+title: "Data Wrangling Project 1"
+author: "Vamsi K Mamidi"
+date: "September 24, 2017"
+output: word_document
+---
+
+
+### Loading Packages
+```{r setup, include=TRUE,message=FALSE}
+
+library (tidyr)
+library (readr)                                              
+library (dplyr)
+
+```
+
+## Load the data in RStudio
+```{r, include=TRUE}
+
+refine_original <- read_csv("refine_original.csv",col_names = TRUE)
+tbl_df(refine_original)
+
+```
+
+## Clean up brand names
+
+```{r}
+refine_original$company<-replace(refine_original$company,agrep("philips",refine_original$company,max=2,fixed=FALSE,ignore.case=TRUE,value=FALSE),"philips")
+
+refine_original$company<-replace(refine_original$company,agrep("akzo",refine_original$company,max=2,fixed=FALSE,ignore.case=TRUE,value=FALSE),"akzo")
+
+refine_original$company<-replace(refine_original$company,agrep("van houten",refine_original$company,max=2,fixed=FALSE,ignore.case=TRUE,value=FALSE),"van houten")
+
+refine_original$company<-replace(refine_original$company,agrep("unilever",refine_original$company,max=2,fixed=FALSE,ignore.case=TRUE,value=FALSE),"unilever")
+
+```
+###Output:
+
+```{r, include=TRUE}
+
+tbl_df(refine_original)
+
+```
+
+
+
+## Separate product code and number
+
+```{r, include=TRUE}
+
+refine_original_sep<- refine_original %>% separate("Product code / number",c("product_code","product_number"),sep="-")
+
+``` 
+###Output:
+
+```{r, include=TRUE}
+
+tbl_df(refine_original_sep)
+
+```
+
+
+
+## Add product categories
+
+```{r, include=TRUE}
+levels<-c("p","x","v","q")
+labels<-c("Smartphone","Laptop","TV","Tablet")
+refine_original_sep$product_category<-labels[match(refine_original_sep$product_code,levels)]
+``` 
+###Output:
+
+```{r, include=TRUE}
+refine_original_sep%>%select(product_category,product_code)
+
+```
+
+
+
+## Add full address for geocoding
+
+```{r, include=TRUE}
+refine_original_add<- refine_original_sep %>% unite("Full_address",address,city,country,sep=",")
+``` 
+###Output:
+
+```{r, include=TRUE}
+refine_original_add%>%select(Full_address)
+
+```
+
+
+## Create dummy variable for company 
+
+```{r, include=TRUE}
+refine_original_add$company_philips<-as.numeric(agrepl("philips",refine_original_add$company,max=2,fixed=FALSE,ignore.case=TRUE))
+
+refine_original_add$company_akzo<-as.numeric(agrepl("akzo",refine_original_add$company,max=2,fixed=FALSE,ignore.case=TRUE))
+
+refine_original_add$company_van_houten<-as.numeric(agrepl("van houten",refine_original_add$company,max=2,fixed=FALSE,ignore.case=TRUE))
+
+refine_original_add$company_unilever<-as.numeric(agrepl("unilever",refine_original_add$company,max=2,fixed=FALSE,ignore.case=TRUE))
+``` 
+###Output:
+
+```{r, include=TRUE}
+refine_original_add%>%select(company_philips,company_unilever,company_van_houten,company_akzo,company)
+
+```
+
+## Create dummy variable for product category
+
+```{r, include=TRUE}
+refine_original_add$product_smartphone<-as.numeric(agrepl("Smartphone",refine_original_add$product_category,max=2,fixed=FALSE,ignore.case=TRUE))
+
+refine_original_add$product_tv<-as.numeric(agrepl("TV",refine_original_add$product_category,max=0.1,fixed=TRUE,ignore.case=TRUE,costs = 1))
+
+refine_original_add$product_Laptop<-as.numeric(agrepl("Laptop",refine_original_add$product_category,max=2,fixed=FALSE,ignore.case=TRUE))
+
+refine_original_add$product_Tablet<-as.numeric(agrepl("Tablet",refine_original_add$product_category,max=2,fixed=FALSE,ignore.case=TRUE))
+``` 
+###Output:
+
+```{r, include=TRUE}
+refine_original_add%>%select(product_Laptop,product_category)
+
+```
+
+
+##Write a CSV File
+
+```{r, include=TRUE}
+
+write_csv(refine_original_add,'refine_clean.csv')
+```
